@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mission Control - Task Manager</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: auto; text-align: center; }
+        input, select, button { margin: 5px; padding: 10px; font-size: 16px; }
+        ul { list-style: none; padding: 0; }
+        li { 
+            margin: 5px; padding: 10px; 
+            border-radius: 5px; 
+            font-size: 18px; 
+            font-weight: bold;
+            color: white;
+        }
+
+        /* Status colors */
+        .todo { background-color: #007bff; } /* Blue */
+        .in-progress { background-color: #ff9800; } /* Orange */
+        .done { background-color: #4caf50; } /* Green */
+    </style>
+</head>
+<body>
+    <h1>Mission Control - Task Manager</h1>
+
+    <!-- Task Input Form -->
+    <input type="text" id="taskName" placeholder="Enter Task Name">
+    <select id="taskStatus">
+        <option value="To Do">To Do</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Done">Done</option>
+    </select>
+    <button onclick="addTask()">Add Task</button>
+
+    <!-- Task List -->
+    <h2>Tasks</h2>
+    <ul id="taskList"></ul>
+
+    <script>
+        const API_URL = "http://127.0.0.1:8000";
+
+        // Fetch and display tasks
+        async function fetchTasks() {
+            try {
+                const response = await fetch(`${API_URL}/tasks`);
+                const tasks = await response.json();
+                const taskList = document.getElementById("taskList");
+                taskList.innerHTML = "";
+                tasks.forEach(task => {
+                    let statusClass = task.status === "To Do" ? "todo" 
+                                   : task.status === "In Progress" ? "in-progress" 
+                                   : "done";
+
+                    taskList.innerHTML += `<li class="${statusClass}"><b>${task.id}</b>: ${task.name} - ${task.status}</li>`;
+                });
+            } catch (error) {
+                console.error("Error fetching tasks:", error);
+            }
+        }
+
+        // Add a new task
+        async function addTask() {
+            const taskName = document.getElementById("taskName").value;
+            const taskStatus = document.getElementById("taskStatus").value;
+
+            if (!taskName) return alert("Task name is required!");
+
+            try {
+                const response = await fetch(`${API_URL}/tasks`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: taskName, status: taskStatus })
+                });
+
+                const newTask = await response.json();
+                console.log("Task Created:", newTask);
+
+                document.getElementById("taskName").value = ""; // Clear input
+                fetchTasks(); // Refresh task list
+            } catch (error) {
+                console.error("Error adding task:", error);
+            }
+        }
+
+        // Load tasks when the page loads
+        fetchTasks();
+    </script>
+</body>
+</html>
